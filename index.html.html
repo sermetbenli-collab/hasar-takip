@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Hasar Takip Sistemi</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:#f8fafc;display:flex;min-height:100vh}
+button,input,select,textarea{font-family:inherit;font-size:13px}
+input,select,textarea{padding:8px 11px;border:1px solid #e2e8f0;border-radius:8px;outline:none;width:100%}
+textarea{resize:vertical;min-height:80px}
+
+/* Sidebar */
+#sidebar{width:200px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;padding:18px 13px;position:sticky;top:0;height:100vh;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.logo-icon{width:34px;height:34px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0}
+.logo-title{font-weight:800;font-size:12px;color:#1e293b;letter-spacing:1px}
+.logo-sub{font-size:10px;color:#94a3b8}
+nav{display:flex;flex-direction:column;gap:3px}
+.nav-btn{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:8px;border:none;background:transparent;color:#64748b;font-weight:500;font-size:13px;cursor:pointer;text-align:left;width:100%}
+.nav-btn.active{background:#eff6ff;color:#2563eb;font-weight:700}
+#save-flash{opacity:0;transition:opacity 0.4s;margin-top:14px;padding:6px 10px;background:#f0fdf4;border-radius:6px;font-size:11px;color:#10b981;font-weight:600;text-align:center}
+.agent-badge{margin-top:auto;display:flex;align-items:center;gap:8px;padding:10px 11px;background:#f8fafc;border-radius:8px}
+.agent-dot{width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0}
+
+/* Main */
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#header{background:#fff;border-bottom:1px solid #e2e8f0;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.header-title{font-weight:800;font-size:18px;color:#1e293b}
+.header-sub{font-size:12px;color:#94a3b8;margin-top:2px}
+.header-btns{display:flex;gap:8px}
+#content{padding:20px 24px;flex:1;overflow-y:auto}
+
+/* Buttons */
+.btn-p{padding:9px 15px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+.btn-s{padding:9px 15px;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+.btn-t{padding:3px 9px;background:#eff6ff;color:#2563eb;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer}
+.btn-d{padding:9px 15px;background:#fef2f2;color:#ef4444;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+
+/* Cards & layout */
+.card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,0.08);margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.stat-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.stat-num{font-size:30px;font-weight:800}
+.stat-lbl{font-size:11px;color:#94a3b8;margin-top:3px;font-weight:600}
+.section-title{font-weight:700;font-size:12px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin:20px 0 10px}
+.card-title{font-weight:700;font-size:11px;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+
+/* Policy rows */
+.pol-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f5f9}
+.pol-key{font-size:12px;color:#94a3b8;font-weight:600}
+.pol-val{font-size:13px;color:#1e293b;font-weight:500;text-align:right;max-width:60%}
+
+/* Claim rows */
+.claim-row{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.claim-row:hover{box-shadow:0 3px 10px rgba(0,0,0,0.12)}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+
+/* Tabs */
+.tabs{display:flex;gap:3px;margin-bottom:16px;background:#fff;border-radius:10px;padding:4px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+.tab-btn{flex:1;padding:8px 5px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:#64748b}
+.tab-btn.active{background:#2563eb;color:#fff}
+
+/* Status */
+.status-bar{background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+.status-btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.st-btn{padding:5px 11px;border-radius:99px;border:none;cursor:pointer;font-size:12px;font-weight:600}
+
+/* Documents */
+.doc-row{background:#fff;border-radius:10px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+.doc-check{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.upload-btn{padding:5px 10px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+
+/* Progress */
+.prog-bar{height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-bottom:6px}
+.prog-fill{height:100%;background:#2563eb;border-radius:99px;transition:width 0.5s}
+
+/* Notes */
+.note-card{background:#fff;border-radius:10px;padding:13px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+
+/* Modal */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;z-index:100}
+#modal.open{display:flex}
+.modal-box{background:#fff;border-radius:16px;padding:26px;width:400px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.form-group{margin-bottom:13px}
+.form-label{font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;display:block}
+
+/* Tablo */
+.tbl{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.07);margin-bottom:10px}
+.tbl-head{display:flex;justify-content:space-between;padding:9px 15px;background:#f8fafc;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase}
+.tbl-row{display:flex;justify-content:space-between;padding:9px 15px;border-top:1px solid #e2e8f0;font-size:13px}
+
+/* Info box */
+.info-box{background:#f8fafc;border-radius:10px;padding:13px;margin-bottom:12px}
+.info-row{display:flex;gap:12px;padding:6px 0;border-bottom:1px dashed #e2e8f0;font-size:12px}
+.info-key{font-weight:700;color:#475569;min-width:120px;flex-shrink:0}
+
+/* Calc */
+.calc-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #f1f5f9}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-title">HASAR TAKİP</div>
+      <div class="logo-sub">Sigorta Acentesi</div>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-btn active" onclick="goView('dashboard')" id="nb-dashboard">◈ &nbsp;Panel</button>
+    <button class="nav-btn" onclick="goView('policy')" id="nb-policy">◉ &nbsp;Poliçe</button>
+    <button class="nav-btn" onclick="goView('claims')" id="nb-claims">◍ &nbsp;Hasarlar</button>
+  </nav>
+  <div id="save-flash">✓ Otomatik kaydedildi</div>
+  <div class="agent-badge">
+    <div class="agent-dot"></div>
+    <div>
+      <div style="font-size:11px;font-weight:700;color:#1e293b">AXA SİGORTA</div>
+      <div style="font-size:10px;color:#64748b">Serment Benli</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <div id="header">
+    <div>
+      <div class="header-title" id="h-title">Genel Panel</div>
+      <div class="header-sub" id="h-sub">K.K.T.C Depremsiz Evim Paket Poliçesi · 633843615</div>
+    </div>
+    <div class="header-btns" id="h-btns"></div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<!-- Modal -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div style="font-weight:800;font-size:16px;color:#1e293b">Yeni Hasar Kaydı</div>
+      <button onclick="closeModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8">×</button>
+    </div>
+    <div class="form-group"><label class="form-label">Hasar Tarihi</label><input type="date" id="f-tarih"/></div>
+    <div class="form-group"><label class="form-label">Açıklama</label><input type="text" id="f-aciklama" placeholder="Hasarı kısaca açıklayın"/></div>
+    <div class="form-group"><label class="form-label">Hasar Türü</label>
+      <select id="f-tur">
+        <option>Elektronik Cihaz</option><option>Yangın</option><option>Hırsızlık</option>
+        <option>Cam Kırılması</option><option>Su Hasarı</option><option>Diğer</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Tahmini Hasar (TL)</label><input type="number" id="f-hasar" value="0"/></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn-p" style="flex:1" onclick="submitForm()">Kaydı Oluştur</button>
+      <button class="btn-s" onclick="closeModal()">İptal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Veri ──────────────────────────────────────────────────────────────────────
+const POL = {
+  policeNo:"633843615", musteriNo:"192391684",
+  baslangic:"02/02/2026", bitis:"02/02/2027",
+  sirket:"AXA SİGORTA A.Ş.", acente:"SERMENT BENLİ TİCARET LTD.",
+  sigortalı:"ASUMAN GÖKSAN", adres:"Göçeri Mah. Hüseyin Göçerili Cad. No:20, Girne",
+  teminatlar:[
+    {ad:"Bina Yangın",bedel:"150.000 GBP"},
+    {ad:"Eşya Yangın",bedel:"14.000 GBP"},
+    {ad:"Ek Teminatlar",bedel:"164.000 GBP"},
+    {ad:"Kira Kaybı",bedel:"16.400 GBP"},
+    {ad:"Elektrik Hasarları",bedel:"34,53 GBP"},
+    {ad:"Cam Kırılması",bedel:"2.000 GBP"},
+    {ad:"Eşya Hırsızlık",bedel:"14.000 GBP"},
+    {ad:"Elektronik Cihaz",bedel:"4.200 GBP",hl:true},
+    {ad:"Makine Kırılması",bedel:"863,58 GBP"},
+    {ad:"Makine Tesisat Yangın",bedel:"2.500 GBP"},
+    {ad:"Makine Tesisat Hırsızlık",bedel:"2.500 GBP"},
+  ],
+};
+
+const INIT = [{
+  id:"HSR-2026-001", tarih:"17.05.2026", bildirimTarihi:"18.05.2026",
+  tur:"Elektronik Cihaz", aciklama:"Elektrik dalgalanması sonucu uydu alıcısı ve su sebili arızası",
+  durum:"işlemde", sigortalı:"ASUMAN GÖKSAN", policeNo:"633843615",
+  cihazlar:[
+    {ad:"Next YE-18500HD Dijital Uydu Alıcısı", seriNo:"YE-18500HD100813902", durum:"Tamiri mümkün değil"},
+    {ad:"Beko BSS 4600 TT Su Sebili", seriNo:"24 10003B 10", durum:"Çalışmıyor"},
+  ],
+  belgeler:[
+    {ad:"Sigortalı Dilekçesi", tarih:"18.05.2026", var:true},
+    {ad:"Kimlik Kartı (Ön)", tarih:"18.05.2026", var:true},
+    {ad:"Kimlik Kartı (Arka)", tarih:"18.05.2026", var:true},
+    {ad:"Teknik Servis Raporu (Yalkın Elektroniz)", tarih:"20.05.2026", var:true},
+    {ad:"Fatura No: 02175 (Yalkın Sadıkoğlu)", tarih:"20.05.2026", var:true},
+    {ad:"Tapu / Koçan", tarih:"-", var:true},
+    {ad:"Beko Su Sebili — Teknik Servis Raporu", tarih:"-", var:false},
+    {ad:"Beko Su Sebili — Fatura / Makbuz", tarih:"-", var:false},
+    {ad:"Eksper Raporu", tarih:"-", var:false},
+    {ad:"Banka Hesap Bilgisi", tarih:"-", var:false},
+  ],
+  tazminat:{faturaTutari:2000, tahminiHasar:2000, muafiyetOrani:10, muafiyetMinimum:450, odenenTutar:null},
+  notlar:[
+    {tarih:"18.05.2026", yazar:"Acente", metin:"Hasar bildirimi alındı. Belgeler toplandı."},
+    {tarih:"20.05.2026", yazar:"Acente", metin:"Teknik servis raporu ve fatura teslim edildi. Eksper ataması bekleniyor."},
+  ],
+}];
+
+const SC = {
+  "açık":       {label:"Açık",       color:"#ef4444", bg:"#fef2f2"},
+  "işlemde":    {label:"İşlemde",    color:"#f59e0b", bg:"#fffbeb"},
+  "kapalı":     {label:"Kapalı",     color:"#10b981", bg:"#f0fdf4"},
+  "reddedildi": {label:"Reddedildi", color:"#6b7280", bg:"#f9fafb"},
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const KEY = "hasar_v3";
+let claims = (() => { try { const r=localStorage.getItem(KEY); if(r) return JSON.parse(r); } catch(e){} return JSON.parse(JSON.stringify(INIT)); })();
+let view = "dashboard";
+let selId = null;
+let tab = "ozet";
+
+function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(claims)); } catch(e){}
+  const f = document.getElementById("save-flash");
+  f.style.opacity = "1";
+  setTimeout(() => f.style.opacity = "0", 1400);
+}
+
+function getClaim() { return claims.find(c => c.id === selId); }
+
+function calcTaz(t) {
+  const hasar = t.tahminiHasar || 0;
+  const muafiyet = Math.max(hasar * t.muafiyetOrani / 100, t.muafiyetMinimum);
+  return { muafiyet: muafiyet.toFixed(0), net: Math.max(0, hasar - muafiyet).toFixed(0) };
+}
+
+function nextId() {
+  const nums = claims.map(c => parseInt(c.id.replace("HSR-2026-","")) || 0);
+  return "HSR-2026-" + String(Math.max(0, ...nums) + 1).padStart(3,"0");
+}
+
+// ── Navigasyon ────────────────────────────────────────────────────────────────
+function goView(v, id) {
+  view = v;
+  if (id) { selId = id; tab = "ozet"; }
+  ["dashboard","policy","claims"].forEach(x => {
+    const b = document.getElementById("nb-"+x);
+    if(b) b.className = "nav-btn" + (v===x?" active":"");
+  });
+  render();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const content = document.getElementById("content");
+  const hTitle = document.getElementById("h-title");
+  const hSub = document.getElementById("h-sub");
+  const hBtns = document.getElementById("h-btns");
+
+  hSub.textContent = "K.K.T.C Depremsiz Evim Paket Poliçesi · 633843615";
+  hBtns.innerHTML = "";
+
+  if (view === "dashboard") {
+    hTitle.textContent = "Genel Panel";
+    content.innerHTML = renderDashboard();
+  } else if (view === "policy") {
+    hTitle.textContent = "Poliçe Bilgileri";
+    content.innerHTML = renderPolicy();
+  } else if (view === "claims") {
+    hTitle.textContent = "Hasar Kayıtları";
+    const btn = document.createElement("button");
+    btn.className = "btn-p"; btn.textContent = "+ Yeni Hasar";
+    btn.onclick = openModal;
+    hBtns.appendChild(btn);
+    content.innerHTML = renderClaims();
+  } else if (view === "detail") {
+    const c = getClaim();
+    hTitle.textContent = c ? c.id : "";
+    hSub.textContent = c ? c.aciklama : "";
+    const bG = document.createElement("button"); bG.className="btn-s"; bG.textContent="← Geri"; bG.onclick=()=>goView("claims"); hBtns.appendChild(bG);
+    const bD = document.createElement("button"); bD.className="btn-d"; bD.textContent="🗑 Sil"; bD.onclick=()=>deleteClaim(selId); hBtns.appendChild(bD);
+    content.innerHTML = renderDetail();
+    attachDetailEvents();
+  }
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const stats = {
+    toplam: claims.length,
+    acik: claims.filter(c=>c.durum==="açık").length,
+    islemde: claims.filter(c=>c.durum==="işlemde").length,
+    kapali: claims.filter(c=>c.durum==="kapalı").length,
+  };
+  const colors = ["#3b82f6","#ef4444","#f59e0b","#10b981"];
+  const labels = ["Toplam","Açık","İşlemde","Kapalı"];
+  const vals = [stats.toplam, stats.acik, stats.islemde, stats.kapali];
+
+  let html = '<div class="stats-grid">';
+  for(let i=0;i<4;i++) html += `<div class="stat-card" style="border-top:3px solid ${colors[i]}"><div class="stat-num" style="color:${colors[i]}">${vals[i]}</div><div class="stat-lbl">${labels[i]}</div></div>`;
+  html += '</div>';
+  html += '<div class="section-title">Son Hasarlar</div>';
+  if(!claims.length) html += '<div style="text-align:center;color:#94a3b8;padding:40px">Henüz kayıt yok.</div>';
+  claims.forEach(c => html += claimRowHTML(c));
+  html += '<div class="section-title">Poliçe Özeti</div><div class="card">';
+  [["Sigortalı",POL.sigortalı],["Poliçe No",POL.policeNo],["Sigortacı",POL.sirket],["Vade",POL.baslangic+" – "+POL.bitis],["Adres",POL.adres]].forEach(([k,v]) => html += polRow(k,v));
+  html += '</div>';
+  return html;
+}
+
+// ── Policy ────────────────────────────────────────────────────────────────────
+function renderPolicy() {
+  let html = '<div class="card">';
+  html += '<div class="section-title" style="margin-top:0">Sözleşme Tarafları</div>';
+  [["Poliçe No",POL.policeNo],["Müşteri No",POL.musteriNo],["Sigortalı",POL.sigortalı],["Kimlik No","4710165158"],["Adres",POL.adres],["Sigortacı",POL.sirket],["Acente",POL.acente],["Başlangıç",POL.baslangic],["Bitiş",POL.bitis],["Yapı Tarzı","Çelik / Betonarme"],["Konut Tipi","Daimi İkametgah"]].forEach(([k,v]) => html += polRow(k,v));
+  html += '</div>';
+  html += '<div class="section-title">Teminat Tablosu</div><div class="tbl">';
+  html += '<div class="tbl-head"><span>Teminat</span><span>Bedel (GBP)</span></div>';
+  POL.teminatlar.forEach(t => html += `<div class="tbl-row" style="${t.hl?"background:#eff6ff":""}"><span style="${t.hl?"font-weight:700":""}">${t.ad}${t.hl?" ★":""}</span><span style="${t.hl?"font-weight:700;color:#2563eb":""}">${t.bedel}</span></div>`);
+  html += '</div>';
+  html += '<div class="section-title">Elektronik Cihaz — Özel Koşullar</div><div class="card info-box">';
+  [["Kapsam","TV, ses sistemi, buzdolabı, çamaşır/bulaşık makinası, kombi, klima, bilgisayar, modem, oyun konsolu vb."],["Hasar Türü","Ani, beklenmedik, harici elektrik dalgalanmaları ve voltaj değişiklikleri dahil fiziki hasar"],["Muafiyet","Her hasarda 450 TL'den az olmamak üzere hasar bedelinin %10'u"],["Yaş Sınırı","7 yıldan eski cihazlar teminat dışıdır"],["Azami Bedel","4.200 GBP"]].forEach(([k,v]) => html += `<div class="info-row"><span class="info-key">${k}</span><span style="color:#1e293b;line-height:1.5">${v}</span></div>`);
+  html += '</div>';
+  return html;
+}
+
+// ── Claims ────────────────────────────────────────────────────────────────────
+function renderClaims() {
+  if(!claims.length) return '<div style="text-align:center;color:#94a3b8;padding:40px">Henüz kayıt yok.</div>';
+  return claims.map(c => claimRowHTML(c)).join("");
+}
+
+function claimRowHTML(c) {
+  const cfg = SC[c.durum] || SC["açık"];
+  return `<div class="claim-row" onclick="goView('detail','${c.id}')">
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-weight:700;font-size:14px;color:#1e293b">${c.id}</span>
+        <span class="badge" style="background:${cfg.bg};color:${cfg.color}">● ${cfg.label}</span>
+      </div>
+      <div style="font-size:13px;color:#64748b;margin-top:3px">${c.aciklama}</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:2px">${c.tur} · ${c.tarih}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-weight:700;color:#2563eb;font-size:14px">${c.tazminat.tahminiHasar.toLocaleString("tr-TR")} TL</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:2px">Tahmini hasar</div>
+      <div style="margin-top:6px;color:#2563eb;font-size:12px">Detay →</div>
+    </div>
+  </div>`;
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+function renderDetail() {
+  const c = getClaim(); if(!c) return "";
+  const calc = calcTaz(c.tazminat);
+  const tamam = c.belgeler.filter(b=>b.var).length;
+  const top = c.belgeler.length;
+  const pct = Math.round((tamam/top)*100);
+
+  // Status bar
+  let stBtns = Object.entries(SC).map(([key,cfg]) => `<button class="st-btn" onclick="setStatus('${key}')" style="background:${c.durum===key?cfg.color:"#f1f5f9"};color:${c.durum===key?"#fff":"#64748b"}">${cfg.label}</button>`).join("");
+  const cfg = SC[c.durum]||SC["açık"];
+
+  // Tabs
+  const tabs = [["ozet","Özet"],["tazminat","Tazminat"],["belgeler",`Belgeler (${tamam}/${top})`],["cihazlar","Cihazlar"],["notlar",`Notlar (${c.notlar.length})`]];
+  let tabHtml = '<div class="tabs">' + tabs.map(([id,label]) => `<button class="tab-btn ${tab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("") + '</div>';
+
+  let html = `
+    <div class="status-bar">
+      <div class="status-btns"><span style="font-size:12px;font-weight:700;color:#64748b;margin-right:4px">Durum:</span>${stBtns}</div>
+      <span class="badge" style="background:${cfg.bg};color:${cfg.color}">● ${cfg.label}</span>
+    </div>
+    ${tabHtml}`;
+
+  // ÖZET
+  if(tab==="ozet") {
+    html += `<div class="grid2">
+      <div>
+        <div class="card-title">Hasar Bilgileri</div>
+        <div class="card">
+          ${[["Hasar No",c.id],["Hasar Tarihi",c.tarih],["Bildirim",c.bildirimTarihi],["Tür",c.tur],["Sigortalı",c.sigortalı],["Poliçe",c.policeNo]].map(([k,v])=>polRow(k,v)).join("")}
+          <div style="padding-top:8px;border-top:1px solid #e2e8f0;margin-top:4px">
+            <div class="pol-key">Açıklama</div>
+            <div style="font-size:13px;color:#1e293b;margin-top:4px;line-height:1.6">${c.aciklama}</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card-title">Tazminat Özeti</div>
+        <div class="card" style="border-left:3px solid #2563eb;margin-bottom:14px">
+          <div class="calc-row"><span>Fatura Tutarı</span><span>${c.tazminat.faturaTutari.toLocaleString("tr-TR")} TL</span></div>
+          <div class="calc-row"><span>Tahmini Hasar</span><span>${c.tazminat.tahminiHasar.toLocaleString("tr-TR")} TL</span></div>
+          <div class="calc-row" style="color:#ef4444"><span>Muafiyet (%${c.tazminat.muafiyetOrani}, min ${c.tazminat.muafiyetMinimum} TL)</span><span>- ${parseInt(calc.muafiyet).toLocaleString("tr-TR")} TL</span></div>
+          <div style="display:flex;justify-content:space-between;font-weight:700;color:#10b981;font-size:16px;padding-top:10px">
+            <span>Tahmini Net Ödeme</span><span>${parseInt(calc.net).toLocaleString("tr-TR")} TL</span>
+          </div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:8px">* Eksper sonrası kesinleşir.</div>
+        </div>
+        <div class="card-title">Belge Durumu</div>
+        <div class="card">
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="font-size:12px;color:#64748b">${tamam}/${top} belge</span>
+            <span style="font-size:12px;font-weight:700;color:#2563eb">${pct}%</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // TAZMİNAT
+  else if(tab==="tazminat") {
+    html += `<div class="card-title">Tazminat Hesaplama</div>
+    <div class="card">
+      <div class="info-box">
+        ${[["Teminat Türü","Elektronik Cihaz"],["Teminat Limiti","4.200 GBP"],["Muafiyet Oranı","%"+c.tazminat.muafiyetOrani],["Min. Muafiyet",c.tazminat.muafiyetMinimum+" TL"],["Yaş Sınırı","7 yıldan eski cihazlar kapsam dışı — TEYİT GEREKLİ"]].map(([k,v])=>`<div class="info-row"><span class="info-key">${k}</span><span style="color:#1e293b">${v}</span></div>`).join("")}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-weight:600">Tahmini Hasar (TL)</span>
+        <button class="btn-t" onclick="editHasarOn()">Düzenle</button>
+      </div>
+      <div id="hasar-display" style="font-size:26px;font-weight:700;color:#1e293b">${c.tazminat.tahminiHasar.toLocaleString("tr-TR")} TL</div>
+      <div id="hasar-edit" style="display:none;align-items:center;gap:8px">
+        <input type="number" id="hasar-inp" value="${c.tazminat.tahminiHasar}" style="width:160px"/>
+        <button class="btn-p" onclick="saveHasar()">Kaydet</button>
+        <button class="btn-s" onclick="editHasarOff()">İptal</button>
+      </div>
+      <div style="margin-top:20px;background:#f8fafc;border-radius:10px;padding:16px">
+        <div style="font-weight:700;font-size:12px;margin-bottom:10px;color:#475569;text-transform:uppercase">Hesaplama</div>
+        <div class="calc-row"><span style="color:#64748b">Brüt Hasar</span><span style="font-weight:600">${c.tazminat.tahminiHasar.toLocaleString("tr-TR")} TL</span></div>
+        <div class="calc-row"><span style="color:#64748b">Muafiyet</span><span style="font-weight:600;color:#ef4444">- ${parseInt(calc.muafiyet).toLocaleString("tr-TR")} TL</span></div>
+        <div style="display:flex;justify-content:space-between;padding-top:10px;font-size:17px;font-weight:700;color:#10b981">
+          <span>Net Ödeme</span><span>${parseInt(calc.net).toLocaleString("tr-TR")} TL</span>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e">
+        ⚠️ Tahmini hesaplamadır. Eksper değerlendirmesi sonrası kesinleşir.
+      </div>
+    </div>`;
+  }
+
+  // BELGELER
+  else if(tab==="belgeler") {
+    html += '<div class="card-title">Belge Kontrol Listesi</div>';
+    c.belgeler.forEach((b,i) => {
+      const uploadBtn = !b.var ? `<label class="upload-btn">↑ Yükle<input type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadBelge(${i},this)"/></label>` : (b.dosyaAdi ? `<button class="btn-t" onclick="removeBelge(${i})">Kaldır</button>` : "");
+      html += `<div class="doc-row">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <div class="doc-check" style="background:${b.var?"#10b981":"#e2e8f0"};color:${b.var?"#fff":"#94a3b8"}">${b.var?"✓":"○"}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13px;color:#1e293b">${b.ad}</div>
+            ${b.dosyaAdi?`<div style="font-size:11px;color:#2563eb;margin-top:2px">📎 ${b.dosyaAdi}</div>`:b.tarih!=="-"?`<div style="font-size:11px;color:#94a3b8">${b.tarih}</div>`:""}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge" style="background:${b.var?"#f0fdf4":"#fef2f2"};color:${b.var?"#10b981":"#ef4444"}">${b.var?"✓ Mevcut":"✗ Eksik"}</span>
+          ${uploadBtn}
+        </div>
+      </div>`;
+    });
+    html += `<div style="margin-top:16px;padding:14px;background:#f8fafc;border-radius:10px;border:2px dashed #e2e8f0">
+      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:6px">📂 Ek Belge Yükle</div>
+      <div style="font-size:11px;color:#94a3b8;margin-bottom:10px">Listedeki belgeler dışında ek dosya veya fotoğraf ekleyebilirsiniz.</div>
+      <label style="display:inline-block;padding:9px 16px;background:#2563eb;color:#fff;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+        + Dosya Seç (PDF, JPG, PNG)
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple style="display:none" onchange="uploadExtra(this)"/>
+      </label>
+    </div>`;
+  }
+
+  // CİHAZLAR
+  else if(tab==="cihazlar") {
+    html += '<div class="card-title">Hasara Konu Cihazlar</div>';
+    c.cihazlar.forEach(cih => {
+      html += `<div class="card" style="display:flex;align-items:center;gap:12px;padding:14px">
+        <div style="font-size:22px">📟</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px;color:#1e293b">${cih.ad}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Seri No: ${cih.seriNo}</div>
+        </div>
+        <span class="badge" style="background:#fef2f2;color:#ef4444">${cih.durum}</span>
+      </div>`;
+    });
+    if(c.id==="HSR-2026-001") html += `<div style="margin-top:12px;padding:12px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1e40af"><strong>Teknik Servis Notu — Yalkın Elektroniz (20.05.2026):</strong><br>Asuman Göksan tarafından getirilen uydu cihazı elektrik dengesizliğinden bozulmuştur. Tamiri mümkün değildir.</div>`;
+  }
+
+  // NOTLAR
+  else if(tab==="notlar") {
+    html += '<div class="card-title">Hasar Notları</div>';
+    if(!c.notlar.length) html += '<div style="color:#94a3b8;font-size:13px;margin-bottom:14px">Henüz not eklenmedi.</div>';
+    c.notlar.forEach(n => {
+      html += `<div class="note-card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-weight:700;font-size:12px;color:#2563eb">${n.yazar}</span>
+          <span style="font-size:11px;color:#94a3b8">${n.tarih}</span>
+        </div>
+        <div style="font-size:13px;color:#1e293b;line-height:1.6">${n.metin}</div>
+      </div>`;
+    });
+    html += `<textarea id="note-inp" placeholder="Yeni not ekle..." style="margin-bottom:8px"></textarea>
+      <button class="btn-p" onclick="addNote()">Not Ekle</button>`;
+  }
+
+  return html;
+}
+
+function polRow(k,v){return`<div class="pol-row"><span class="pol-key">${k}</span><span class="pol-val">${v}</span></div>`;}
+
+// ── Detail Event Bağlantıları ─────────────────────────────────────────────────
+function attachDetailEvents() {}
+
+function setStatus(d) {
+  claims = claims.map(c => c.id===selId ? {...c, durum:d} : c);
+  persist(); render();
+}
+
+function setTab(t) { tab=t; render(); }
+
+function editHasarOn() {
+  document.getElementById("hasar-display").style.display="none";
+  document.getElementById("hasar-edit").style.display="flex";
+}
+function editHasarOff() {
+  document.getElementById("hasar-display").style.display="block";
+  document.getElementById("hasar-edit").style.display="none";
+}
+function saveHasar() {
+  const val = parseFloat(document.getElementById("hasar-inp").value);
+  if(isNaN(val)) return;
+  claims = claims.map(c => c.id===selId ? {...c, tazminat:{...c.tazminat, tahminiHasar:val}} : c);
+  persist(); render();
+}
+
+function uploadBelge(i, input) {
+  const file = input.files[0]; if(!file) return;
+  const today = new Date().toLocaleDateString("tr-TR");
+  claims = claims.map(c => {
+    if(c.id!==selId) return c;
+    const belgeler = c.belgeler.map((b,idx) => idx===i ? {...b, var:true, tarih:today, dosyaAdi:file.name} : b);
+    return {...c, belgeler};
+  });
+  persist(); render();
+}
+function removeBelge(i) {
+  claims = claims.map(c => {
+    if(c.id!==selId) return c;
+    const belgeler = c.belgeler.map((b,idx) => idx===i ? {...b, var:false, tarih:"-", dosyaAdi:null} : b);
+    return {...c, belgeler};
+  });
+  persist(); render();
+}
+function uploadExtra(input) {
+  const files = Array.from(input.files); if(!files.length) return;
+  const today = new Date().toLocaleDateString("tr-TR");
+  claims = claims.map(c => {
+    if(c.id!==selId) return c;
+    const yeni = files.map(f => ({ad:f.name, tarih:today, var:true, dosyaAdi:f.name}));
+    return {...c, belgeler:[...c.belgeler, ...yeni]};
+  });
+  persist(); render();
+}
+
+function addNote() {
+  const inp = document.getElementById("note-inp");
+  if(!inp||!inp.value.trim()) return;
+  const note = {tarih:new Date().toLocaleDateString("tr-TR"), yazar:"Acente", metin:inp.value.trim()};
+  claims = claims.map(c => c.id===selId ? {...c, notlar:[...c.notlar, note]} : c);
+  persist(); render();
+}
+
+function deleteClaim(id) {
+  if(!confirm("Bu hasarı silmek istediğinize emin misiniz?")) return;
+  claims = claims.filter(c => c.id!==id);
+  persist(); goView("claims");
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function openModal() { document.getElementById("modal").classList.add("open"); }
+function closeModal() { document.getElementById("modal").classList.remove("open"); }
+function submitForm() {
+  const tarih = document.getElementById("f-tarih").value;
+  const aciklama = document.getElementById("f-aciklama").value;
+  if(!tarih||!aciklama) { alert("Lütfen tarih ve açıklama girin."); return; }
+  const hasar = parseFloat(document.getElementById("f-hasar").value)||0;
+  const tur = document.getElementById("f-tur").value;
+  const id = nextId();
+  const newClaim = {
+    id, tarih: tarih.split("-").reverse().join("."),
+    bildirimTarihi: new Date().toLocaleDateString("tr-TR"),
+    tur, aciklama, durum:"açık",
+    sigortalı:"ASUMAN GÖKSAN", policeNo:"633843615", cihazlar:[],
+    belgeler:[
+      {ad:"Sigortalı Dilekçesi",tarih:"-",var:false},
+      {ad:"Kimlik Kartı",tarih:"-",var:false},
+      {ad:"Eksper Raporu",tarih:"-",var:false},
+      {ad:"Banka Hesap Bilgisi",tarih:"-",var:false},
+    ],
+    tazminat:{faturaTutari:hasar, tahminiHasar:hasar, muafiyetOrani:10, muafiyetMinimum:450, odenenTutar:null},
+    notlar:[],
+  };
+  claims = [...claims, newClaim];
+  persist(); closeModal(); goView("claims");
+}
+
+// ── Başlat ────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
